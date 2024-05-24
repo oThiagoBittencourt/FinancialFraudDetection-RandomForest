@@ -1,8 +1,8 @@
 from sklearn import preprocessing
 from pickle import dump
 from imblearn.over_sampling import SMOTE
-from collections import Counter
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import cross_validate
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -57,10 +57,47 @@ dados_atributos_b.columns = dados_atributos.columns
 dados_classes_b = pd.DataFrame(dados_classes_b)
 dados_classes_b.columns = ['isFraud']
 
-dados_finais = dados_atributos_b.join(dados_classes_b, how='left')
+dados_finais_b = dados_atributos_b.join(dados_classes_b, how='left')
+
+# HIPERPARAMETRIZAÇÃO
+
+# Calculo Amostral para realização das hiperparametrizações
+# População pós balanceamento: 12.708.814
+# Erro amostral: 3%
+# Nível de confiança: 95%
+# Distribuição da população: 80/20
+### Resultado: 683
+
+dados_finais_b_train = dados_finais_b.sample(683)
+class_train_b = dados_finais_b_train['isFraud']
+atr_train_b = dados_finais_b_train.drop(columns=['isFraud'])
+
+# Montagem da grade de parâmentros
+# Número de árvores na floresta
+n_estimators = [int(x) for x in np.linspace(start = 100, stop = 300, num = 3)]
+# Número de atributos considerados em cada segmento
+max_features = ['auto', 'srqt']
+# Número máximo de folhas em cada árvore
+max_depth = [int(x) for x in np.linspace(10,110, num = 3)]
+max_depth.append(None)
+
+# Alternative
+random_grid = {'n_estimators' : n_estimators,
+               'max_features' : max_features,
+               'max_depth' : max_depth}
+
+# INICIAR A BUSCA PELO MELHORES HIPERPARAMETROS
+
+# rf = instanciação da randomForest
+rf_grid = RandomForestClassifier()
+rf_grid = GridSearchCV(rf_grid,random_grid,refit=True,verbose=2)
+rf_grid.fit(atr_train_b, class_train_b)
+
+print("MELHORES HIPERPARÂMETROS")
+print(rf_grid.best_params_)
 
 # TREINAR O MODELO
-rf = RandomForestClassifier()
+rf = RandomForestClassifier(rf_grid.best_params_)
 FinancialFraudRF = rf.fit(dados_atributos_b, dados_classes_b.values.ravel())
 dump(FinancialFraudRF, open('Training/Models/synthetic_financial_fraud_detection_RF_2024.pkl', 'wb'))
 
