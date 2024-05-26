@@ -1,3 +1,5 @@
+### Synthetic Financial Fraud ###
+
 # step
 Maps a unit of time in the real world. In this case 1 step is 1 hour of time.
 

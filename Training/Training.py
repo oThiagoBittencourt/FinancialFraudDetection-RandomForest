@@ -76,28 +76,35 @@ atr_train_b = dados_finais_b_train.drop(columns=['isFraud'])
 # Número de árvores na floresta
 n_estimators = [int(x) for x in np.linspace(start = 100, stop = 300, num = 3)]
 # Número de atributos considerados em cada segmento
-max_features = ['auto', 'srqt']
+max_features = ['log2', 'sqrt']
 # Número máximo de folhas em cada árvore
 max_depth = [int(x) for x in np.linspace(10,110, num = 3)]
 max_depth.append(None)
+# Número mínimo de instâncias requeridas para segmentar cada nó
+min_samples_split = [2,5,10]
+# Número mínimo de amostras necessárias em cada nó
+min_samples_leaf = [1,2,4]
+# Método de seleção de amostras para treinar cada árvore
+bootstrap = [True, False]
 
-# Alternative
-random_grid = {'n_estimators' : n_estimators,
-               'max_features' : max_features,
-               'max_depth' : max_depth}
+random_grid = { 'n_estimators' : n_estimators,
+                'max_features' : max_features,
+                'max_depth' : max_depth,
+                'min_samples_split' : min_samples_split,
+                'min_samples_leaf' : min_samples_leaf,
+                'bootstrap' : bootstrap,}
 
 # INICIAR A BUSCA PELO MELHORES HIPERPARAMETROS
 
-# rf = instanciação da randomForest
 rf_grid = RandomForestClassifier()
-rf_grid = GridSearchCV(rf_grid,random_grid,refit=True,verbose=2)
+rf_grid = GridSearchCV(rf_grid,random_grid,refit=True,verbose=0)
 rf_grid.fit(atr_train_b, class_train_b)
 
 print("MELHORES HIPERPARÂMETROS")
 print(rf_grid.best_params_)
 
 # TREINAR O MODELO
-rf = RandomForestClassifier(rf_grid.best_params_)
+rf = RandomForestClassifier(n_estimators=rf_grid.best_params_['n_estimators'], max_features=rf_grid.best_params_['max_features'], max_depth=rf_grid.best_params_['max_depth'], min_samples_split=rf_grid.best_params_['min_samples_split'], min_samples_leaf=rf_grid.best_params_['min_samples_leaf'], bootstrap=rf_grid.best_params_['bootstrap'])
 FinancialFraudRF = rf.fit(dados_atributos_b, dados_classes_b.values.ravel())
 dump(FinancialFraudRF, open('Training/Models/synthetic_financial_fraud_detection_RF_2024.pkl', 'wb'))
 
@@ -114,7 +121,3 @@ plt.bar(x, y)
 plt.savefig('Training/CrossValidation.png')
 
 plt.show()
-
-# Resultados:
-# test_precision_macro = 0.9092801273458389
-# test_recall_macro = 0.8602703588552417
